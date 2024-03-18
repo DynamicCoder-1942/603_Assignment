@@ -1,0 +1,28 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import lower, explode, split, regexp_replace
+from pyspark.sql.types import StringType
+
+# Initialize SparkSession
+spark = SparkSession.builder \
+    .appName("WordCount") \
+    .getOrCreate()
+
+# Load text file into a DataFrame
+lines = spark.read.text("file1.txt")
+
+# Remove punctuations and split each sentence into words
+words_df = lines.select(regexp_replace(lower("value"), "[^\w\s]", "").alias("text")) \
+                .select(explode(split("text", "\s+")).alias("word")) \
+                .filter("word != ''")
+
+# Group by word and count occurrences
+word_counts_df = words_df.groupBy("word").count()
+
+# Get count of all data
+total_count = word_counts_df.count()
+print("Total count of all data:", total_count)
+
+# Stop SparkSession
+spark.stop()
+
+
